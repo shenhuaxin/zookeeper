@@ -636,6 +636,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
         loadDataBase();
         cnxnFactory.start();        
         startLeaderElection();
+        // 启动自己的线程
         super.start();
     }
 
@@ -703,6 +704,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
     }
     synchronized public void startLeaderElection() {
     	try {
+            // 创建一个选票，  getLastLoggedZxid：xid    getCurrentEpoch：版本号
     		currentVote = new Vote(myid, getLastLoggedZxid(), getCurrentEpoch());
     	} catch(IOException e) {
     		RuntimeException re = new RuntimeException(e.getMessage());
@@ -727,6 +729,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                 throw new RuntimeException(e);
             }
         }
+        // leader选举算法
         this.electionAlg = createElectionAlgorithm(electionType);
     }
     
@@ -822,10 +825,13 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             le = new AuthFastLeaderElection(this, true);
             break;
         case 3:
+            // zk集群通信组件
             qcm = createCnxnManager();
+            // 请求监听器
             QuorumCnxManager.Listener listener = qcm.listener;
             if(listener != null){
                 listener.start();
+                //
                 le = new FastLeaderElection(this, qcm);
             } else {
                 LOG.error("Null listener when initializing cnx manager");

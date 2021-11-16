@@ -812,7 +812,7 @@ public class FastLeaderElection implements Election {
 
             LOG.info("New election. My id =  " + self.getId() +
                     ", proposed zxid=0x" + Long.toHexString(proposedZxid));
-            sendNotifications();
+            sendNotifications();   // 将投票发送出去（放入到sendQueue中）
 
             /*
              * Loop in which we exchange notifications until we find a leader
@@ -825,7 +825,7 @@ public class FastLeaderElection implements Election {
                  * the termination time
                  */
                 Notification n = recvqueue.poll(notTimeout,
-                        TimeUnit.MILLISECONDS);
+                        TimeUnit.MILLISECONDS);  // 从recvqueue获取响应。
 
                 /*
                  * Sends more notifications if haven't received enough.
