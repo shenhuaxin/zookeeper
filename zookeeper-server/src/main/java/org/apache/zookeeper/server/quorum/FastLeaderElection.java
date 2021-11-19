@@ -105,7 +105,7 @@ public class FastLeaderElection implements Election {
         long zxid;
 
         /*
-         * Epoch
+         * Epoch  逻辑时钟， 选举的轮次
          */
         long electionEpoch;
 
@@ -120,7 +120,7 @@ public class FastLeaderElection implements Election {
         long sid;
 
         /*
-         * epoch of the proposed leader
+         * epoch of the proposed leader ， 所处leader的轮次
          */
         long peerEpoch;
 
@@ -899,11 +899,10 @@ public class FastLeaderElection implements Election {
                         // 收集接收到的选票
                         recvset.put(n.sid, new Vote(n.leader, n.zxid, n.electionEpoch, n.peerEpoch));
 
+                        // 判断当前节点选择的leader是否为选票内的大多数
                         if (termPredicate(recvset,
                                 new Vote(proposedLeader, proposedZxid,
                                         logicalclock.get(), proposedEpoch))) {
-                            // 判断这个选票是否在所有的选票中 占大多数
-
                             // Verify if there is any change in the proposed leader
                             // 不断的等待 200ms , 如果在200ms内没有拿到新的选票，或者拿到的选票可能会更换 leader， 那么跳出循环。
                             while((n = recvqueue.poll(finalizeWait,
@@ -920,7 +919,7 @@ public class FastLeaderElection implements Election {
                              * This predicate is true once we don't read any new
                              * relevant message from the reception queue
                              */
-                            // leader节点可以确认好了。
+                            // n == null , 说明leader节点可以确认好了。
                             if (n == null) {
                                 // 根据选票的状态，判断自己是 leader 还是 follower
                                 self.setPeerState((proposedLeader == self.getId()) ?
