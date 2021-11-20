@@ -333,6 +333,8 @@ public class Leader {
 
                         BufferedInputStream is = new BufferedInputStream(
                                 s.getInputStream());
+                        // leader 为每个learner 都创建一个Handler，
+                        // 用于处理来自 learner 的请求
                         LearnerHandler fh = new LearnerHandler(s, is, Leader.this);
                         fh.start();
                     } catch (SocketException e) {
