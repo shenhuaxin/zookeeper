@@ -226,6 +226,7 @@ public class Learner {
         sock.setSoTimeout(self.tickTime * self.initLimit);
         for (int tries = 0; tries < 5; tries++) {
             try {
+                // 尝试连接leader ，最多重试五次
                 sock.connect(addr, self.tickTime * self.syncLimit);
                 sock.setTcpNoDelay(nodelay);
                 break;

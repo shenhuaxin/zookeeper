@@ -65,6 +65,8 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
             throw new IOException("Socket is null!");
         }
         if (sockKey.isReadable()) {
+            // 第一次只读取四个字节， 因为这个时候 incomingBuffer == lenBuffer ， 只能存储四个字节的数据
+            // 第二次根据第一次读取到的 len , 再次读取字节
             int rc = sock.read(incomingBuffer);
             if (rc < 0) {
                 throw new EndOfStreamException(
@@ -72,25 +74,28 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
                                 + Long.toHexString(sessionId)
                                 + ", likely server has closed socket");
             }
-            if (!incomingBuffer.hasRemaining()) {
+            if (!incomingBuffer.hasRemaining()) { // 没有剩余， 代表读取到了 四个字节， 继续向下操作。
                 incomingBuffer.flip();
-                if (incomingBuffer == lenBuffer) {
+                if (incomingBuffer == lenBuffer) {  // 等于的话，代表读取的就是第一次读取
                     recvCount++;
-                    readLength();
-                } else if (!initialized) {
-                    readConnectResult();
+                    readLength();     // 根据读取到的 len , 重新分配一个新的buffer给 incomingBuffer
+                } else if (!initialized) {   // 如果没有初始化过， 那么就读取 ConnectResult，
+                    readConnectResult();  // 在这里，读取到了一个 SessionId
                     enableRead();
                     if (findSendablePacket(outgoingQueue,
                             cnxn.sendThread.clientTunneledAuthenticationInProgress()) != null) {
                         // Since SASL authentication has completed (if client is configured to do so),
                         // outgoing packets waiting in the outgoingQueue can now be sent.
+                        // 如果有可以发送的 packet , 那么就 enableWrite
                         enableWrite();
                     }
+                    // 清空lenBuffer， 准备好下一次读取数据。
                     lenBuffer.clear();
                     incomingBuffer = lenBuffer;
                     updateLastHeard();
                     initialized = true;
                 } else {
+                    // 将读取到的 incomingBuffer ， 交给 sendThread 进行处理
                     sendThread.readResponse(incomingBuffer);
                     lenBuffer.clear();
                     incomingBuffer = lenBuffer;
@@ -146,7 +151,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
                     // http://docs.oracle.com/javase/6/docs/technotes/guides/net/articles/connection_release.html
                     disableWrite();
                 } else {
-                    // Just in case
+                    // Just in case  以防万一， 其实也就是没必要
                     enableWrite();
                 }
             }
