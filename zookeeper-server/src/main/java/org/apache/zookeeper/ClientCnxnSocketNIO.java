@@ -75,11 +75,11 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
                                 + ", likely server has closed socket");
             }
             if (!incomingBuffer.hasRemaining()) { // 没有剩余， 代表读取到了 四个字节， 继续向下操作。
-                incomingBuffer.flip();
+                incomingBuffer.flip();   // 反转读写模式
                 if (incomingBuffer == lenBuffer) {  // 等于的话，代表读取的就是第一次读取
                     recvCount++;
                     readLength();     // 根据读取到的 len , 重新分配一个新的buffer给 incomingBuffer
-                } else if (!initialized) {   // 如果没有初始化过， 那么就读取 ConnectResult，
+                } else if (!initialized) {   // 如果没有初始化完成， 那么就读取 ConnectResult，
                     readConnectResult();  // 在这里，读取到了一个 SessionId
                     enableRead();
                     if (findSendablePacket(outgoingQueue,
@@ -105,6 +105,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
         }
         if (sockKey.isWritable()) {
             synchronized(outgoingQueue) {
+                // 找到第一个可以发送的Packet ， 1. 发半包的 2. 还在处理 sasl 的， 3. 正常等待发送的
                 Packet p = findSendablePacket(outgoingQueue,
                         cnxn.sendThread.clientTunneledAuthenticationInProgress());
 
@@ -117,10 +118,13 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
                                 (p.requestHeader.getType() != OpCode.auth)) {
                             p.requestHeader.setXid(cnxn.getXid());
                         }
+                        // 如果 Packet 的 bytebuffer为空， 那么就要进行生成。生成了 Packet 对应的 bytebuffer
                         p.createBB();
                     }
+                    // 将bytebuffer发送出去
                     sock.write(p.bb);
                     if (!p.bb.hasRemaining()) {
+                        // 如果没有剩余的包没发出去的话，就将这个packet从outgoingQueue中删除，并加入到 pendingQueue中。
                         sentCount++;
                         outgoingQueue.removeFirstOccurrence(p);
                         if (p.requestHeader != null
@@ -138,6 +142,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
                     // from within ZooKeeperSaslClient (if client is configured
                     // to attempt SASL authentication), or in either doIO() or
                     // in doTransport() if not.
+                    // 如果 outgoingQueue 为空， 那么就没必要监听 OP_WRITE 事件了
                     disableWrite();
                 } else if (!initialized && p != null && !p.bb.hasRemaining()) {
                     // On initial connection, write the complete connect request
@@ -149,6 +154,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
                     // TCP stack may choose to abort with RST, in which case the
                     // client would never receive the session expired event.  See
                     // http://docs.oracle.com/javase/6/docs/technotes/guides/net/articles/connection_release.html
+                    // 如果没有初始化完成 并且 没有发半包的情况，那么也没必要监听 OP_WRITE 事件了
                     disableWrite();
                 } else {
                     // Just in case  以防万一， 其实也就是没必要
@@ -166,6 +172,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
             }
             if (outgoingQueue.getFirst().bb != null // If we've already starting sending the first packet, we better finish
                 || !clientTunneledAuthenticationInProgress) {
+                // 1. 只发半包，sasl请求已经处理完了， 直接返回第一个
                 return outgoingQueue.getFirst();
             }
 
@@ -174,6 +181,7 @@ public class ClientCnxnSocketNIO extends ClientCnxnSocket {
             // This packet must be sent so that the SASL authentication process
             // can proceed, but all other packets should wait until
             // SASL authentication completes.
+            // 首先发送 没有header头的 sasl 请求
             ListIterator<Packet> iter = outgoingQueue.listIterator();
             while (iter.hasNext()) {
                 Packet p = iter.next();

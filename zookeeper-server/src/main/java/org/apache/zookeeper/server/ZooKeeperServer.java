@@ -745,6 +745,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
             }
         }
         try {
+            // session 重新分桶
             touch(si.cnxn);
             boolean validpacket = Request.isValid(si.type);
             if (validpacket) {

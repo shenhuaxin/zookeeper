@@ -309,7 +309,7 @@ public class ClientCnxn {
                 }
                 baos.close();
                 this.bb = ByteBuffer.wrap(baos.toByteArray());
-                this.bb.putInt(this.bb.capacity() - 4);
+                this.bb.putInt(this.bb.capacity() - 4);  // 这里就会把刚才 len的 -1 ，进行覆盖
                 this.bb.rewind();
             } catch (IOException e) {
                 LOG.warn("Ignoring unexpected exception", e);
@@ -947,6 +947,7 @@ public class ClientCnxn {
                 outgoingQueue.addFirst(new Packet(null, null, conReq,
                             null, null, readOnly));
             }
+            // 只关注 OP_READ 和 OP_WRITE
             clientCnxnSocket.enableReadWriteOnly();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Session establishment request sent on "

@@ -88,6 +88,7 @@ public class SessionTrackerImpl extends ZooKeeperCriticalThread implements Sessi
 
     private long roundToInterval(long time) {
         // We give a one interval grace period
+        // 最多、最少， 要比 time 大 expirationInterval
         return (time / expirationInterval + 1) * expirationInterval;
     }
 
