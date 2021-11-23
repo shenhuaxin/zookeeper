@@ -650,6 +650,7 @@ public class ClientCnxn {
 
         if (p.cb == null) {
             synchronized (p) {
+                // 通知阻塞在这个 packet 的线程
                 p.finished = true;
                 p.notifyAll();
             }
