@@ -124,10 +124,13 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
             while (true) {
                 Request si = null;
                 if (toFlush.isEmpty()) {
+                    // 阻塞获取
                     si = queuedRequests.take();
                 } else {
+                    // 非阻塞
                     si = queuedRequests.poll();
                     if (si == null) {
+                        // queuedRequests 为空，进行一次 flush 操作
                         flush(toFlush);
                         continue;
                     }
@@ -175,6 +178,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements Req
                     }
                     toFlush.add(si);
                     if (toFlush.size() > 1000) {
+                        // flush 链表上超过1000个， 进行一次flush
                         flush(toFlush);
                     }
                 }
