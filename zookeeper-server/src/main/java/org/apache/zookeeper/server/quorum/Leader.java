@@ -610,7 +610,8 @@ public class Leader {
             LOG.debug("Count for zxid: 0x{} is {}",
                     Long.toHexString(zxid), p.ackSet.size());
         }
-        if (self.getQuorumVerifier().containsQuorum(p.ackSet)){             
+        if (self.getQuorumVerifier().containsQuorum(p.ackSet)){
+            // 如果返回 ack 的 follower 已经超过半数， 那么就进行commit
             if (zxid != lastCommitted+1) {
                 LOG.warn("Commiting zxid 0x{} from {} not first!",
                         Long.toHexString(zxid), followerAddr);
@@ -787,6 +788,7 @@ public class Leader {
             }
 
             lastProposed = p.packet.getZxid();
+            // 加入 outstandingProposals 这个map中，
             outstandingProposals.put(lastProposed, p);
             sendPacket(pp);
         }

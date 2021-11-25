@@ -74,6 +74,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements RequestP
             while (!finished) {
                 int len = toProcess.size();
                 for (int i = 0; i < len; i++) {
+                    // 交给 nextProcessor 处理，已经由 多数follower ack的 proposal
                     nextProcessor.processRequest(toProcess.get(i));
                 }
                 toProcess.clear();
@@ -97,6 +98,8 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements RequestP
                         if (nextPending != null
                                 && nextPending.sessionId == r.sessionId
                                 && nextPending.cxid == r.cxid) {
+                            // committedRequests 中的 request 和 nextPending 一致，才会把 nextPending
+                            // 加入到 toProcess 中。
                             // we want to send our version of the request.
                             // the pointer to the connection in the request
                             nextPending.hdr = r.hdr;
@@ -120,6 +123,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements RequestP
 
                 synchronized (this) {
                     // Process the next requests in the queuedRequests
+                    // 只有 nextPending 为空， 才会给 nextPending 进行赋值
                     while (nextPending == null && queuedRequests.size() > 0) {
                         Request request = queuedRequests.remove();
                         switch (request.type) {
