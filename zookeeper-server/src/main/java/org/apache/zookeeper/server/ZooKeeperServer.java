@@ -281,10 +281,11 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
             setZxid(zkDb.getDataTreeLastProcessedZxid());
         }
         else {
+            // 如果没有初始化过，那么就进行一次数据加载
             setZxid(zkDb.loadDataBase());
         }
         
-        // Clean up dead sessions
+        // Clean up dead sessions  ，  清理 session
         LinkedList<Long> deadSessions = new LinkedList<Long>();
         for (Long session : zkDb.getSessions()) {
             if (zkDb.getSessionWithTimeOuts().get(session) == null) {
