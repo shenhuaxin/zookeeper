@@ -484,7 +484,7 @@ public class LearnerHandler extends ZooKeeperThread {
             } finally {
                 rl.unlock();
             }
-             // 发送 NEWLEADER 消息
+             // 发送 NEWLEADER 消息。 一个是直接发， 一个是入队， 正常情况是入队
              QuorumPacket newLeaderQP = new QuorumPacket(Leader.NEWLEADER,
                     ZxidUtils.makeZxid(newEpoch, 0), null, null);
              if (getVersion() < 0x10000) {

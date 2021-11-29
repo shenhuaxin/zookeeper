@@ -325,6 +325,7 @@ public class Learner {
         // In the DIFF case we don't need to do a snapshot because the transactions will sync on top of any existing snapshot
         // For SNAP and TRUNC the snapshot is needed to save that history
         boolean snapshotNeeded = true;
+        // 读取同步类型
         readPacket(qp);
         LinkedList<Long> packetsCommitted = new LinkedList<Long>();
         LinkedList<PacketInFlight> packetsNotCommitted = new LinkedList<PacketInFlight>();
@@ -338,7 +339,7 @@ public class Learner {
                 // The leader is going to dump the database
                 // clear our own database and read
                 zk.getZKDatabase().clear();
-                zk.getZKDatabase().deserializeSnapshot(leaderIs);
+                zk.getZKDatabase().deserializeSnapshot(leaderIs);   // 从leader读取 snapshot
                 String signature = leaderIs.readString("signature");
                 if (!signature.equals("BenWasHere")) {
                     LOG.error("Missing signature. Got " + signature);
