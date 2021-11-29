@@ -871,23 +871,25 @@ public class Leader {
     }
     // VisibleForTesting
     protected Set<Long> connectingFollowers = new HashSet<Long>();
+    // leader从自身和follower计算之后提交 proposal 的 epoch 值
     public long getEpochToPropose(long sid, long lastAcceptedEpoch) throws InterruptedException, IOException {
         synchronized(connectingFollowers) {
             if (!waitingForNewEpoch) {
                 return epoch;
             }
             if (lastAcceptedEpoch >= epoch) {
-                epoch = lastAcceptedEpoch+1;
+                epoch = lastAcceptedEpoch+1;  // 加1的目的是为了保证新leader的epoch 不会和之前leader的epoch重复
             }
             if (isParticipant(sid)) {
                 connectingFollowers.add(sid);
             }
             QuorumVerifier verifier = self.getQuorumVerifier();
+            // 如果多数派都和leader建立了连接， 那么下次proposal的epoch值就达成了一致
             if (connectingFollowers.contains(self.getId()) && 
                                             verifier.containsQuorum(connectingFollowers)) {
                 waitingForNewEpoch = false;
                 self.setAcceptedEpoch(epoch);
-                connectingFollowers.notifyAll();
+                connectingFollowers.notifyAll();   // 唤醒所有 wait 在 else 中的 Leader线程和LearnHandler线程
             } else {
                 long start = Time.currentElapsedTime();
                 long cur = start;
