@@ -450,7 +450,7 @@ public class Learner {
                         throw new IOException("Failed to create " +
                                               updating.toString());
                     }
-                    if (snapshotNeeded) {
+                    if (snapshotNeeded) {  // 只要 learnHandler发送过来的type为diff, 那么都为 true
                         zk.takeSnapshot();
                     }
                     self.setCurrentEpoch(newEpoch);
