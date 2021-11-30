@@ -74,7 +74,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements RequestP
             while (!finished) {
                 int len = toProcess.size();
                 for (int i = 0; i < len; i++) {
-                    // 交给 nextProcessor 处理，已经由 多数follower ack的 proposal
+                    // 交给 nextProcessor 处理，toProcess中的请求是已经由 多数follower ack的 proposal
                     nextProcessor.processRequest(toProcess.get(i));
                 }
                 toProcess.clear();

@@ -541,8 +541,10 @@ public class FileTxnLog implements TxnLog {
          */
         void init() throws IOException {
             storedFiles = new ArrayList<File>();
+            // 这里是以文件的后缀的大小，进行逆序排序
             List<File> files = Util.sortDataDir(FileTxnLog.getLogFiles(logDir.listFiles(), 0), LOG_FILE_PREFIX, false);
             for (File f: files) {
+                // storedFiles 加入所有比 zxid 大的文件，加入第一个比zxid小的文件, 那么最小的文件就在storedFiles的最后一个。
                 if (Util.getZxidFromName(f.getName(), LOG_FILE_PREFIX) >= zxid) {
                     storedFiles.add(f);
                 }
@@ -628,6 +630,7 @@ public class FileTxnLog implements TxnLog {
                 return false;
             }
             try {
+                // 在创建 ia 的时候， 已经读取了 2个int 和 1个long, 到这里是已经不是文件的开头了。
                 long crcValue = ia.readLong("crcvalue");
                 byte[] bytes = Util.readTxnBytes(ia);
                 // Since we preallocate, we define EOF to be an
