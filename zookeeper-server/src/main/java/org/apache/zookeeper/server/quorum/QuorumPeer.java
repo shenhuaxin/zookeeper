@@ -713,6 +713,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
     		re.setStackTrace(e.getStackTrace());
     		throw re;
     	}
+        // 找到自己
         for (QuorumServer p : getView().values()) {
             if (p.id == myid) {
                 myQuorumAddr = p.addr;

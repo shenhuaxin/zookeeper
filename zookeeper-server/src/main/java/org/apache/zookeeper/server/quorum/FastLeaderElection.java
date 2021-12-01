@@ -675,10 +675,13 @@ public class FastLeaderElection implements Election {
          * from leader stating that it is leading, then predicate is false.
          */
 
+        // 判断选票选举的leader是否可以当选，需要判断选举的leader是否把选票已经发送过来了，如果没有的话， 暂时不能当选。
+        // 判断选票选举的leader自己发送过来的选票的状态是否为Leading, 如果不是的话，那么这个选票不能判断选举生效。
         if(leader != self.getId()){
             if(votes.get(leader) == null) predicate = false;
             else if(votes.get(leader).getState() != ServerState.LEADING) predicate = false;
         } else if(logicalclock.get() != electionEpoch) {
+            // 如果选票选举的leader就是自身， 那么就需要判断选举轮次，是否一致，不一致不能当选。
             predicate = false;
         } 
 
@@ -869,6 +872,8 @@ public class FastLeaderElection implements Election {
                                 updateProposal(n.leader, n.zxid, n.peerEpoch);
                             } else {
                                 // 收到的选票小于本地的，那么就将投票，就投自己
+                                // 因为逻辑时钟是小于收到的选票，所以不再使用之前接收到的其他选票信息，而是直接使用本地的信息
+                                // 重新进行选举
                                 updateProposal(getInitId(),
                                         getInitLastLoggedZxid(),
                                         getPeerEpoch());
@@ -885,7 +890,7 @@ public class FastLeaderElection implements Election {
                             break;
                         } else if (totalOrderPredicate(n.leader, n.zxid, n.peerEpoch,
                                 proposedLeader, proposedZxid, proposedEpoch)) {
-                            // 接收收到选票的信息，重新投票
+                            // 如果接收到的选票优先级大， 更新本地的选票，重新投票
                             updateProposal(n.leader, n.zxid, n.peerEpoch);
                             sendNotifications();
                         }
@@ -951,6 +956,7 @@ public class FastLeaderElection implements Election {
                                                           n.peerEpoch));
                            
                             if(ooePredicate(recvset, outofelection, n)) {
+                                // 判断收到的选票选举的leader是否能否当选。
                                 self.setPeerState((n.leader == self.getId()) ?
                                         ServerState.LEADING: learningState());
 
@@ -975,6 +981,7 @@ public class FastLeaderElection implements Election {
                                                             n.state));
            
                         if(ooePredicate(outofelection, outofelection, n)) {
+                            // 判断收到的选票选举的leader是否能否当选。
                             synchronized(this){
                                 logicalclock.set(n.electionEpoch);
                                 self.setPeerState((n.leader == self.getId()) ?
