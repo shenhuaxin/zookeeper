@@ -437,7 +437,7 @@ public class Learner {
                         self.setCurrentEpoch(newEpoch);
                     }
                     self.cnxnFactory.setZooKeeperServer(zk);                
-                    break outerLoop;
+                    break outerLoop;  // 跳出多重循环
                 case Leader.NEWLEADER: // Getting NEWLEADER here instead of in discovery 
                     // means this is Zab 1.0
                     // Create updatingEpoch file and remove it after current
